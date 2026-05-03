@@ -26,6 +26,7 @@ const levelUpBanner = document.getElementById('levelup-banner');
 const levelUpText = document.getElementById('levelup-text');
 const gameoverLeaderboard = document.getElementById('gameover-leaderboard');
 const victoryLeaderboard = document.getElementById('victory-leaderboard');
+const touchControls = document.getElementById('touch-controls');
 
 // ---- Game state ----
 let W, H;
@@ -64,8 +65,7 @@ window.addEventListener('keydown', e => {
     }
   }
 
-  if (e.code === 'KeyP' && state === 'playing') { state = 'paused'; pauseScreen.style.display = ''; }
-  else if (e.code === 'KeyP' && state === 'paused') { state = 'playing'; pauseScreen.style.display = 'none'; lastTime = performance.now(); }
+  if (e.code === 'KeyP') togglePause();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -73,6 +73,53 @@ titleScreen.addEventListener('click', () => { if (state === 'title') showNameScr
 gameoverScreen.addEventListener('click', () => { if (state === 'gameover') showNameScreen(); });
 victoryScreen.addEventListener('click', () => { if (state === 'victory') showNameScreen(); });
 nameSubmitBtn.addEventListener('click', submitName);
+
+// ---- Touch Controls ----
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+  touchControls.style.display = 'flex';
+}
+
+function bindTouchKey(btnId, keyCode) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const press = (e) => { e.preventDefault(); keys[keyCode] = true; };
+  const release = (e) => { e.preventDefault(); keys[keyCode] = false; };
+  
+  btn.addEventListener('touchstart', press, { passive: false });
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('touchend', release, { passive: false });
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', release);
+}
+
+bindTouchKey('btn-up', 'ArrowUp');
+bindTouchKey('btn-down', 'ArrowDown');
+bindTouchKey('btn-left', 'ArrowLeft');
+bindTouchKey('btn-right', 'ArrowRight');
+bindTouchKey('btn-fire', 'Space');
+
+const btnPause = document.getElementById('btn-pause');
+if (btnPause) {
+  btnPause.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    togglePause();
+  }, { passive: false });
+  btnPause.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    togglePause();
+  });
+}
+
+function togglePause() {
+  if (state === 'playing') {
+    state = 'paused';
+    pauseScreen.style.display = '';
+  } else if (state === 'paused') {
+    state = 'playing';
+    pauseScreen.style.display = 'none';
+    lastTime = performance.now();
+  }
+}
 
 // ---- Name Screen ----
 function showNameScreen() {
