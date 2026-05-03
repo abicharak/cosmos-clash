@@ -37,6 +37,7 @@ html, body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg-deep);
 }
@@ -204,7 +205,10 @@ html, body {
 
 .screen-content {
   text-align: center;
-  padding: 40px;
+  padding: 20px;
+  max-height: 100dvh;
+  overflow-y: auto;
+  width: 100%;
 }
 
 /* ---- Title Screen ---- */
@@ -553,9 +557,9 @@ html, body {
 /* ---- Touch Controls ---- */
 .touch-controls {
   position: absolute;
-  bottom: 30px;
-  left: 20px;
-  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: max(20px, env(safe-area-inset-left));
+  right: max(20px, env(safe-area-inset-right));
   z-index: 100;
   display: flex; /* toggled by JS */
   justify-content: space-between;

@@ -2,7 +2,7 @@
 
 **Cosmos Clash** is a fast-paced, retro-styled endless space shooter built for the browser. Blast your way through alien invaders, defeat evolving bosses, and chase the highest score across 50 progressive levels! 
 
-![Cosmos Clash Gameplay](https://via.placeholder.com/800x450.png?text=Cosmos+Clash+Gameplay) <!-- Placeholder for actual screenshot -->
+![Cosmos Clash Gameplay](https://cosmosclash.vercel.app/) <!-- Placeholder for actual screenshot -->
 
 ## 🚀 Features
 
