@@ -204,25 +204,33 @@ function spawnBoss() {
   });
 }
 
-function handleEndGame(endType) {
+async function handleEndGame(endType) {
   const currentLevel = waveManager.level;
-
-  // Save to leaderboard if qualifies
-  if (qualifiesForLeaderboard(score)) {
-    saveToLeaderboard(playerName, score, currentLevel);
-  }
 
   if (endType === 'gameover') {
     state = 'gameover';
     finalScoreEl.textContent = `SCORE: ${String(score).padStart(7, '0')}`;
     finalLevelEl.textContent = `REACHED LEVEL: ${currentLevel}`;
-    renderLeaderboard(gameoverLeaderboard, playerName, score, currentLevel);
+    // Show connecting message manually
+    gameoverLeaderboard.innerHTML = '<div class="lb-title">GLOBAL TOP PILOTS</div><div style="text-align:center; padding: 20px; color:#00fff7; font-family:\\'Orbitron\\', sans-serif;">TRANSMITTING SCORE...</div>';
     gameoverScreen.style.display = '';
   } else {
     state = 'victory';
     victoryScoreEl.textContent = `SCORE: ${String(score).padStart(7, '0')}`;
-    renderLeaderboard(victoryLeaderboard, playerName, score, currentLevel);
+    victoryLeaderboard.innerHTML = '<div class="lb-title">GLOBAL TOP PILOTS</div><div style="text-align:center; padding: 20px; color:#00fff7; font-family:\\'Orbitron\\', sans-serif;">TRANSMITTING SCORE...</div>';
     victoryScreen.style.display = '';
+  }
+
+  // Always attempt to save if score > 0 (Dreamlo handles sorting)
+  if (score > 0) {
+    await saveToLeaderboard(playerName, score, currentLevel);
+  }
+
+  // Now render the updated board
+  if (state === 'gameover') {
+    renderLeaderboard(gameoverLeaderboard, playerName, score, currentLevel);
+  } else if (state === 'victory') {
+    renderLeaderboard(victoryLeaderboard, playerName, score, currentLevel);
   }
 }
 

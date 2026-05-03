@@ -1,113 +1,102 @@
-// Leaderboard module — localStorage-backed top 5 scores
-// Memory-conscious: only stores exactly 5 entries max
+// Global Leaderboard module — powered by Dreamlo
+// Uses frontend fetch API to communicate with a free leaderboard BaaS
 
-const STORAGE_KEY = 'cosmos_clash_leaderboard_v2';
+const PUBLIC_KEY = '69f739268f40bb1068c254cc';
+const PRIVATE_KEY = 'roLmuVlKXEOr4ey24KjZ5gB1jufVdy0065mfMAV3uqLg';
 const MAX_ENTRIES = 5;
 
-/**
- * @typedef {{ name: string, score: number, level: number }} LeaderboardEntry
- */
+let cachedBoard = [];
+let isFetching = false;
 
-const DEFAULT_LEADERBOARD = [];
-
-/** Load leaderboard from localStorage. Returns sorted array (max 5). */
-export function loadLeaderboard() {
-  let stored = [];
+/** Fetch leaderboard from Dreamlo */
+export async function fetchLeaderboard(force = false) {
+  if (isFetching && !force) return cachedBoard;
+  isFetching = true;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (Array.isArray(data)) {
-        stored = data
-          .filter(e => e && typeof e.name === 'string' && typeof e.score === 'number')
-          .map(e => ({ name: e.name.slice(0, 16), score: e.score, level: e.level || 1 }));
-      }
+    // Dreamlo returns JSON with `{ "dreamlo": { "leaderboard": { "entry": [...] } } }`
+    const res = await fetch(`https://dreamlo.com/lb/${PUBLIC_KEY}/json`);
+    const data = await res.json();
+    let entries = [];
+    if (data.dreamlo && data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry) {
+      const e = data.dreamlo.leaderboard.entry;
+      entries = Array.isArray(e) ? e : [e];
     }
-  } catch {}
-
-  const merged = new Map();
-  // Add defaults
-  DEFAULT_LEADERBOARD.forEach(e => {
-    merged.set(`${e.name}_${e.score}`, e);
-  });
-  
-  // Add stored entries
-  stored.forEach((e, i) => {
-    const key = `${e.name}_${e.score}`;
-    // If it matches a default exactly, deduplicate it. Otherwise, keep it unique.
-    if (merged.has(key) && merged.get(key).level === e.level) {
-      merged.set(key, e);
-    } else {
-      merged.set(`${key}_${i}`, e);
-    }
-  });
-
-  return Array.from(merged.values())
-    .sort((a, b) => b.score - a.score)
-    .slice(0, MAX_ENTRIES);
-}
-
-/** Check if a score qualifies for the leaderboard. */
-export function qualifiesForLeaderboard(score) {
-  const board = loadLeaderboard();
-  if (board.length < MAX_ENTRIES) return true;
-  return score > board[board.length - 1].score;
-}
-
-/** Save a new entry if it qualifies. Returns the updated board. */
-export function saveToLeaderboard(name, score, level) {
-  const board = loadLeaderboard();
-  board.push({ name: name.slice(0, 16), score, level });
-  board.sort((a, b) => b.score - a.score);
-  const trimmed = board.slice(0, MAX_ENTRIES);
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-  } catch {
-    // Storage full — silently fail
+    
+    cachedBoard = entries.map(e => ({
+      name: e.name,
+      score: parseInt(e.score, 10),
+      level: parseInt(e.seconds, 10) || 1
+    })).slice(0, MAX_ENTRIES);
+  } catch (err) {
+    console.error("Failed to fetch global leaderboard", err);
   }
-  return trimmed;
+  isFetching = false;
+  return cachedBoard;
+}
+
+/** Save a new entry to Dreamlo */
+export async function saveToLeaderboard(name, score, level) {
+  // Sanitize name for URL (Dreamlo uses path parameters)
+  const safeName = encodeURIComponent(name.slice(0, 16).replace(/[^a-zA-Z0-9_\- ]/g, '').trim()) || 'UNKNOWN';
+  
+  try {
+    // Dreamlo add endpoint: /add/{name}/{score}/{seconds}
+    // We map level to the 'seconds' field so we can store it.
+    await fetch(`https://dreamlo.com/lb/${PRIVATE_KEY}/add/${safeName}/${score}/${level}`);
+    await fetchLeaderboard(true); // force refresh cache after saving
+  } catch (err) {
+    console.error("Failed to save to global leaderboard", err);
+  }
+}
+
+/** Check if a score qualifies (checks local cache to avoid blocking) */
+export function qualifiesForLeaderboard(score) {
+  if (cachedBoard.length < MAX_ENTRIES) return true;
+  return score > cachedBoard[cachedBoard.length - 1].score;
 }
 
 /**
  * Render leaderboard HTML into a container element.
- * @param {HTMLElement} container
- * @param {string} currentName - current player name (to highlight)
- * @param {number} currentScore - current player score
- * @param {number} currentLevel - current player level
+ * Handles loading state automatically.
  */
 export function renderLeaderboard(container, currentName, currentScore, currentLevel) {
-  const board = loadLeaderboard();
-  const isOnBoard = currentName && board.some(e => e.name === currentName && e.score === currentScore);
+  container.innerHTML = '<div class="lb-title">GLOBAL TOP PILOTS</div><div style="text-align:center; padding: 20px; color:#00fff7; font-family:\'Orbitron\', sans-serif;">CONNECTING TO SATELLITE...</div>';
+  
+  fetchLeaderboard().then(board => {
+    let html = '<div class="lb-title">GLOBAL TOP PILOTS</div>';
+    html += '<table class="lb-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>LVL</th></tr></thead><tbody>';
 
-  let html = '<div class="lb-title">TOP PILOTS</div>';
-  html += '<table class="lb-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>LVL</th></tr></thead><tbody>';
-
-  if (board.length === 0) {
-    html += '<tr><td colspan="4" class="lb-empty">NO RECORDS YET</td></tr>';
-  } else {
-    board.forEach((entry, i) => {
-      const isCurrent = currentName && entry.name === currentName && entry.score === currentScore;
-      const cls = isCurrent ? ' class="lb-highlight"' : '';
-      html += `<tr${cls}><td>${i + 1}</td><td>${escapeHtml(entry.name)}</td><td>${String(entry.score).padStart(7, '0')}</td><td>${entry.level}</td></tr>`;
-    });
-  }
-
-  html += '</tbody></table>';
-
-  // Only show current player info if currentName is provided
-  if (currentName) {
-    html += '<div class="lb-current">';
-    html += `<span class="lb-current-label">YOUR RUN</span>`;
-    html += `<span class="lb-current-name">${escapeHtml(currentName)}</span>`;
-    html += `<span class="lb-current-score">${String(currentScore).padStart(7, '0')}</span>`;
-    html += `<span class="lb-current-level">LVL ${currentLevel}</span>`;
-    if (isOnBoard) {
-      html += `<span class="lb-badge">★ NEW HIGH SCORE</span>`;
+    if (board.length === 0) {
+      html += '<tr><td colspan="4" class="lb-empty">NO RECORDS YET</td></tr>';
+    } else {
+      board.forEach((entry, i) => {
+        // Handle name matching roughly because of sanitization
+        const safeCurrentName = currentName ? currentName.slice(0, 16).replace(/[^a-zA-Z0-9_\- ]/g, '').trim() : '';
+        const isCurrent = safeCurrentName && entry.name === safeCurrentName && entry.score === currentScore;
+        const cls = isCurrent ? ' class="lb-highlight"' : '';
+        html += `<tr${cls}><td>${i + 1}</td><td>${escapeHtml(entry.name)}</td><td>${String(entry.score).padStart(7, '0')}</td><td>${entry.level}</td></tr>`;
+      });
     }
-    html += '</div>';
-  }
 
-  container.innerHTML = html;
+    html += '</tbody></table>';
+
+    if (currentName) {
+      html += '<div class="lb-current">';
+      html += `<span class="lb-current-label">YOUR RUN</span>`;
+      html += `<span class="lb-current-name">${escapeHtml(currentName)}</span>`;
+      html += `<span class="lb-current-score">${String(currentScore).padStart(7, '0')}</span>`;
+      html += `<span class="lb-current-level">LVL ${currentLevel}</span>`;
+      
+      const isOnBoard = board.some(e => e.name === currentName.slice(0, 16).replace(/[^a-zA-Z0-9_\- ]/g, '').trim() && e.score === currentScore);
+      if (isOnBoard) {
+         html += `<span class="lb-badge">★ NEW HIGH SCORE</span>`;
+      }
+
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+  });
 }
 
 function escapeHtml(str) {
@@ -115,3 +104,6 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+// Prefetch on script load
+fetchLeaderboard();
