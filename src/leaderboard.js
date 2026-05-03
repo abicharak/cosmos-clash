@@ -8,22 +8,49 @@ const MAX_ENTRIES = 5;
  * @typedef {{ name: string, score: number, level: number }} LeaderboardEntry
  */
 
+const DEFAULT_LEADERBOARD = [
+  { name: 'APOLLO', score: 50000, level: 10 },
+  { name: 'STARBUCK', score: 40000, level: 8 },
+  { name: 'VIPER', score: 30000, level: 6 },
+  { name: 'JESTER', score: 20000, level: 4 },
+  { name: 'MAVERICK', score: 10000, level: 2 }
+];
+
 /** Load leaderboard from localStorage. Returns sorted array (max 5). */
 export function loadLeaderboard() {
+  let stored = [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const data = JSON.parse(raw);
-    if (!Array.isArray(data)) return [];
-    // Sanitize & trim to MAX_ENTRIES
-    return data
-      .filter(e => e && typeof e.name === 'string' && typeof e.score === 'number')
-      .map(e => ({ name: e.name.slice(0, 16), score: e.score, level: e.level || 1 }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, MAX_ENTRIES);
-  } catch {
-    return [];
-  }
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data)) {
+        stored = data
+          .filter(e => e && typeof e.name === 'string' && typeof e.score === 'number')
+          .map(e => ({ name: e.name.slice(0, 16), score: e.score, level: e.level || 1 }));
+      }
+    }
+  } catch {}
+
+  const merged = new Map();
+  // Add defaults
+  DEFAULT_LEADERBOARD.forEach(e => {
+    merged.set(`${e.name}_${e.score}`, e);
+  });
+  
+  // Add stored entries
+  stored.forEach((e, i) => {
+    const key = `${e.name}_${e.score}`;
+    // If it matches a default exactly, deduplicate it. Otherwise, keep it unique.
+    if (merged.has(key) && merged.get(key).level === e.level) {
+      merged.set(key, e);
+    } else {
+      merged.set(`${key}_${i}`, e);
+    }
+  });
+
+  return Array.from(merged.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_ENTRIES);
 }
 
 /** Check if a score qualifies for the leaderboard. */
