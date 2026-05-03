@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cosmos Clash — Retro Space Shooter</title>
+    <meta name="description" content="A retro-styled endless space shooter browser game. Blast through 50 levels of alien invaders, defeat evolving bosses, and chase the high score!" />
+    <link rel="icon" type="image/png" href="/game_icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="game-wrapper">
+      <!-- CRT overlay effects -->
+      <div id="crt-overlay"></div>
+      <div id="scanlines"></div>
+
+      <!-- HUD -->
+      <div id="hud">
+        <div id="hud-left">
+          <span class="hud-label">SCORE</span>
+          <span id="score-display" class="hud-value">0000000</span>
+        </div>
+        <div id="hud-center">
+          <span id="level-display" class="hud-level">LEVEL 1</span>
+          <span id="wave-display" class="hud-label">WAVE 1</span>
+        </div>
+        <div id="hud-right">
+          <span class="hud-label">LIVES</span>
+          <span id="lives-display" class="hud-value">♥♥♥</span>
+        </div>
+      </div>
+
+      <!-- Main game canvas -->
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Level Up Banner -->
+      <div id="levelup-banner" class="level-banner" style="display: none">
+        <span id="levelup-text">LEVEL 2</span>
+      </div>
+
+      <!-- Title Screen -->
+      <div id="title-screen" class="screen-overlay">
+        <div class="screen-content">
+          <h1 class="game-title">COSMOS<br /><span class="title-accent">CLASH</span></h1>
+          <div class="title-ship">▲</div>
+          <p class="blink-text">PRESS ENTER OR CLICK TO START</p>
+          <div class="controls-info">
+            <p><span class="key">W A S D</span> or <span class="key">↑ ← ↓ →</span> MOVE</p>
+            <p><span class="key">SPACE</span> FIRE</p>
+            <p><span class="key">P</span> PAUSE</p>
+          </div>
+          <p class="subtitle-info">SURVIVE 50 LEVELS TO WIN</p>
+        </div>
+      </div>
+
+      <!-- Name Input Screen -->
+      <div id="name-screen" class="screen-overlay" style="display: none">
+        <div class="screen-content">
+          <h1 class="name-title">IDENTIFY<br />YOURSELF</h1>
+          <p class="name-subtitle">ENTER YOUR CALLSIGN, PILOT</p>
+          <div class="name-input-wrap">
+            <input id="player-name-input" type="text" maxlength="16" placeholder="PILOT NAME" autocomplete="off" spellcheck="false" />
+          </div>
+          <button id="name-submit-btn" class="neon-btn">LAUNCH</button>
+          <p class="name-hint">MAX 16 CHARACTERS</p>
+        </div>
+      </div>
+
+      <!-- Game Over Screen -->
+      <div id="gameover-screen" class="screen-overlay" style="display: none">
+        <div class="screen-content">
+          <h1 class="gameover-title">GAME OVER</h1>
+          <p id="final-score" class="final-score">SCORE: 0000000</p>
+          <p id="final-level" class="final-score" style="font-size: clamp(11px, 2vw, 16px); margin-bottom: 10px;">REACHED LEVEL: 1</p>
+          <div id="gameover-leaderboard" class="leaderboard-container"></div>
+          <p class="blink-text">PRESS ENTER TO RETRY</p>
+        </div>
+      </div>
+
+      <!-- Victory Screen -->
+      <div id="victory-screen" class="screen-overlay" style="display: none">
+        <div class="screen-content">
+          <h1 class="victory-title">MISSION<br />COMPLETE</h1>
+          <p class="victory-sub">ALL 50 LEVELS CLEARED!</p>
+          <p id="victory-score" class="final-score">SCORE: 0000000</p>
+          <div id="victory-leaderboard" class="leaderboard-container"></div>
+          <p class="blink-text">PRESS ENTER TO PLAY AGAIN</p>
+        </div>
+      </div>
+
+      <!-- Pause Overlay -->
+      <div id="pause-screen" class="screen-overlay" style="display: none">
+        <div class="screen-content">
+          <h1 class="pause-title">PAUSED</h1>
+          <p class="blink-text">PRESS P TO RESUME</p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
