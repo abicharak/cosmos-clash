@@ -1,20 +1,14 @@
 // Leaderboard module — localStorage-backed top 5 scores
 // Memory-conscious: only stores exactly 5 entries max
 
-const STORAGE_KEY = 'cosmos_clash_leaderboard';
+const STORAGE_KEY = 'cosmos_clash_leaderboard_v2';
 const MAX_ENTRIES = 5;
 
 /**
  * @typedef {{ name: string, score: number, level: number }} LeaderboardEntry
  */
 
-const DEFAULT_LEADERBOARD = [
-  { name: 'APOLLO', score: 50000, level: 10 },
-  { name: 'STARBUCK', score: 40000, level: 8 },
-  { name: 'VIPER', score: 30000, level: 6 },
-  { name: 'JESTER', score: 20000, level: 4 },
-  { name: 'MAVERICK', score: 10000, level: 2 }
-];
+const DEFAULT_LEADERBOARD = [];
 
 /** Load leaderboard from localStorage. Returns sorted array (max 5). */
 export function loadLeaderboard() {
@@ -83,7 +77,7 @@ export function saveToLeaderboard(name, score, level) {
  */
 export function renderLeaderboard(container, currentName, currentScore, currentLevel) {
   const board = loadLeaderboard();
-  const isOnBoard = board.some(e => e.name === currentName && e.score === currentScore);
+  const isOnBoard = currentName && board.some(e => e.name === currentName && e.score === currentScore);
 
   let html = '<div class="lb-title">TOP PILOTS</div>';
   html += '<table class="lb-table"><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>LVL</th></tr></thead><tbody>';
@@ -92,7 +86,7 @@ export function renderLeaderboard(container, currentName, currentScore, currentL
     html += '<tr><td colspan="4" class="lb-empty">NO RECORDS YET</td></tr>';
   } else {
     board.forEach((entry, i) => {
-      const isCurrent = entry.name === currentName && entry.score === currentScore;
+      const isCurrent = currentName && entry.name === currentName && entry.score === currentScore;
       const cls = isCurrent ? ' class="lb-highlight"' : '';
       html += `<tr${cls}><td>${i + 1}</td><td>${escapeHtml(entry.name)}</td><td>${String(entry.score).padStart(7, '0')}</td><td>${entry.level}</td></tr>`;
     });
@@ -100,16 +94,18 @@ export function renderLeaderboard(container, currentName, currentScore, currentL
 
   html += '</tbody></table>';
 
-  // Always show current player info below
-  html += '<div class="lb-current">';
-  html += `<span class="lb-current-label">YOUR RUN</span>`;
-  html += `<span class="lb-current-name">${escapeHtml(currentName)}</span>`;
-  html += `<span class="lb-current-score">${String(currentScore).padStart(7, '0')}</span>`;
-  html += `<span class="lb-current-level">LVL ${currentLevel}</span>`;
-  if (isOnBoard) {
-    html += `<span class="lb-badge">★ NEW HIGH SCORE</span>`;
+  // Only show current player info if currentName is provided
+  if (currentName) {
+    html += '<div class="lb-current">';
+    html += `<span class="lb-current-label">YOUR RUN</span>`;
+    html += `<span class="lb-current-name">${escapeHtml(currentName)}</span>`;
+    html += `<span class="lb-current-score">${String(currentScore).padStart(7, '0')}</span>`;
+    html += `<span class="lb-current-level">LVL ${currentLevel}</span>`;
+    if (isOnBoard) {
+      html += `<span class="lb-badge">★ NEW HIGH SCORE</span>`;
+    }
+    html += '</div>';
   }
-  html += '</div>';
 
   container.innerHTML = html;
 }

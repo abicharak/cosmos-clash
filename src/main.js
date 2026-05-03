@@ -26,6 +26,8 @@ const levelUpBanner = document.getElementById('levelup-banner');
 const levelUpText = document.getElementById('levelup-text');
 const gameoverLeaderboard = document.getElementById('gameover-leaderboard');
 const victoryLeaderboard = document.getElementById('victory-leaderboard');
+const titleLeaderboard = document.getElementById('title-leaderboard');
+const nameLeaderboard = document.getElementById('name-leaderboard');
 const touchControls = document.getElementById('touch-controls');
 
 // ---- Game state ----
@@ -127,6 +129,9 @@ function showNameScreen() {
   state = 'name';
   nameScreen.style.display = '';
   nameInput.value = '';
+  if (nameLeaderboard) {
+    renderLeaderboard(nameLeaderboard, null, null, null);
+  }
   nameInput.focus();
 }
 
@@ -433,5 +438,11 @@ function titleLoop(now) {
   starField.draw(ctx);
   requestAnimationFrame(titleLoop);
 }
+
+// Initial leaderboard render for title screen
+if (titleLeaderboard) {
+  renderLeaderboard(titleLeaderboard, null, null, null);
+}
+
 lastTime = performance.now();
 requestAnimationFrame(titleLoop);
